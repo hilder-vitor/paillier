@@ -2,6 +2,7 @@
 #include "Paillier.h"
 #include<iostream>
 
+using namespace std;
 
 mpz_class _lmc(mpz_class a, mpz_class b){
 	return abs(a * b) / gcd(a, b);
@@ -94,5 +95,39 @@ mpz_class Paillier::mul(mpz_class ciphertext, mpz_class plaintext){
 	mpz_class product;
 	mpz_powm (product.get_mpz_t(), ciphertext.get_mpz_t(), plaintext.get_mpz_t(), n_square.get_mpz_t());
 	return product;
+}
+
+// --- Vector functions
+vector<mpz_class> Paillier::enc(vector<mpz_class> plaintext){
+	vector<mpz_class> enc_v(plaintext.size());
+	for (unsigned int i = 0; i < enc_v.size(); i++){
+		enc_v[i] = enc(plaintext[i]);
+	}
+	return enc_v;
+}
+	
+vector<mpz_class> Paillier::dec(vector<mpz_class> ciphertext){
+	vector<mpz_class> plain_v(ciphertext.size());
+	for (unsigned int i = 0; i < plain_v.size(); i++){
+		plain_v[i] = dec(ciphertext[i]);
+	}
+	return plain_v;
+}
+
+vector<mpz_class> Paillier::add(std::vector<mpz_class> ciphertext1, std::vector<mpz_class> ciphertext2){
+	vector<mpz_class> sum_v(ciphertext1.size());
+	for (unsigned int i = 0; i < ciphertext1.size(); i++){
+		sum_v[i] = add(ciphertext1[i], ciphertext2[i]);
+	}
+	return sum_v;
+}
+
+
+vector<mpz_class> Paillier::mul(std::vector<mpz_class> ciphertext, std::vector<mpz_class> plaintext){
+	vector<mpz_class> prod_v(ciphertext.size());
+	for (unsigned int i = 0; i < ciphertext.size(); i++){
+		prod_v[i] = mul(ciphertext[i], plaintext[i]);
+	}
+	return prod_v;
 }
 
