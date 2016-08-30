@@ -44,7 +44,6 @@ void Paillier::init_g_and_mu(){
 	mpz_init(tmp_mu);
 
 	while (! found_inverse){
-	
 		g = 2 + rand_gen.get_z_range(n_square - 2); // random g in [2, n^2 - 1]
 		mpz_class power_of_g;
 		mpz_powm (power_of_g.get_mpz_t(), g.get_mpz_t(), l.get_mpz_t(), n_square.get_mpz_t());
@@ -88,10 +87,12 @@ mpz_class Paillier::dec(mpz_class ciphertext){
 }
 
 mpz_class Paillier::add(mpz_class ciphertext1, mpz_class ciphertext2){
-	return ciphertext2; // TODO
+	return (ciphertext1 * ciphertext2) % n_square;
 }
 
 mpz_class Paillier::mul(mpz_class ciphertext, mpz_class plaintext){
-	return ciphertext; // TODO
+	mpz_class product;
+	mpz_powm (product.get_mpz_t(), ciphertext.get_mpz_t(), plaintext.get_mpz_t(), n_square.get_mpz_t());
+	return product;
 }
 

@@ -19,7 +19,6 @@ class Paillier {
 	public:
 	Paillier(int number_of_bits_of_n);
 
-
 	mpz_class enc(mpz_class plaintext);
 	
 	mpz_class dec(mpz_class ciphertext);
