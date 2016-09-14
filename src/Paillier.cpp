@@ -56,9 +56,9 @@ void Paillier::init_g_and_mu(){
 	mpz_clear(tmp_mu);
 }
 
-Paillier::Paillier(int _number_of_bits_of_n) : rand_gen(gmp_randinit_default) {
+Paillier::Paillier(int _number_of_bits_of_n, bool _statefull) : rand_gen(gmp_randinit_default), stateful(_statefull) {
 
-	rand_gen.seed(123); // XXX: Just testing
+	rand_gen.seed(1234); // XXX: Just testing
 
 	number_of_bits_of_n = _number_of_bits_of_n;
 	int number_of_bits_of_primes = number_of_bits_of_n / 2; 
@@ -77,7 +77,16 @@ mpz_class Paillier::enc(mpz_class plaintext){
 	mpz_class power_of_g;
 
 	mpz_powm (r.get_mpz_t(), r.get_mpz_t(), n.get_mpz_t(), n_square.get_mpz_t());
-	mpz_powm (power_of_g.get_mpz_t(), g.get_mpz_t(), plaintext.get_mpz_t(), n_square.get_mpz_t());
+	if (stateful){ // if stateful, stores g^<plaintext> to avoid recalculation
+		if (state.count(plaintext))
+			power_of_g = state[plaintext];
+		else{
+			mpz_powm (power_of_g.get_mpz_t(), g.get_mpz_t(), plaintext.get_mpz_t(), n_square.get_mpz_t());
+			state[plaintext] = power_of_g;
+		}
+	}else{
+		mpz_powm (power_of_g.get_mpz_t(), g.get_mpz_t(), plaintext.get_mpz_t(), n_square.get_mpz_t());
+	}
 	return power_of_g * r;
 }
 	

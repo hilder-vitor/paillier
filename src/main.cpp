@@ -31,11 +31,21 @@ vector<mpz_class> mult_component_wise(vector<mpz_class> u, vector<mpz_class> v){
 int main(){
 	Paillier p(2048);
 
-	mpz_class m1 = 11;
-	mpz_class m2 = 128;
+	mpz_class m1 = 111212333;
+	mpz_class m2 = 1123;
 
+	cout << "ENC m1 = " << m1 << endl;
 	mpz_class c1 = p.enc(m1);
 	mpz_class c2 = p.enc(m2);
+
+	for (unsigned int i = 0; i < 1000; i++){
+		p.enc(m1);
+		p.enc(m2);
+	}
+
+	return 0;
+
+
 
 	if (p.dec(c1) == m1)
 		cout << "ENC(" << m1 << ") .....  OK" << endl;

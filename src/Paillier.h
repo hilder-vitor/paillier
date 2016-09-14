@@ -1,9 +1,22 @@
 
 #include<gmpxx.h>
 #include<vector>
+#include<unordered_map>
 
 #ifndef __PAILLIER_192847381293484738
 #define __PAILLIER_192847381293484738
+
+/** Defining a function to hash a mpz_class. */
+namespace std {
+template <> struct hash<mpz_class>
+{
+	size_t operator()(const mpz_class& x) const
+	{
+		return x.get_ui(); // This is not good if your hash gets big!
+    }
+};
+}
+
 
 class Paillier {
 
@@ -11,6 +24,8 @@ class Paillier {
 	gmp_randclass rand_gen;
 	mpz_class p, q, l, g, mu, n, n_square;
 	int number_of_bits_of_n;
+	bool stateful;
+	std::unordered_map<mpz_class,mpz_class> state; // if used, it stores g^<plaintext>
 
 	void generate_primes(int number_of_bits);
 
@@ -18,7 +33,7 @@ class Paillier {
 		
 	
 	public:
-	Paillier(int number_of_bits_of_n);
+	Paillier(int number_of_bits_of_n, bool stateful=false);
 
 	mpz_class enc(mpz_class plaintext);
 	
