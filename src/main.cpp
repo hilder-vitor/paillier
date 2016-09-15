@@ -29,57 +29,64 @@ vector<mpz_class> mult_component_wise(vector<mpz_class> u, vector<mpz_class> v){
 }
 
 int main(){
-	Paillier p(2048);
+	paillier::Paillier p(2048);
 
-	mpz_class m1 = 11;
-	mpz_class m2 = 128;
+	mpz_class m1 = 50;
+	mpz_class m2 = 11231233;
 
-	mpz_class c1 = p.enc(m1);
-	mpz_class c2 = p.enc(m2);
+	paillier::Ciphertext c1 = p.enc(m1);
+	paillier::Ciphertext c2 = p.enc(m2);
 
 	if (p.dec(c1) == m1)
 		cout << "ENC(" << m1 << ") .....  OK" << endl;
 	else
-		cout << "ENC(" << m1 << ") .....  OK" << endl;
+		cout << "ENC(" << m1 << ") .....  ERROR" << endl;
 
 	if (p.dec(c2) == m2)
 		cout << "ENC(" << m2 << ") .....  OK" << endl;
 	else
-		cout << "ENC(" << m2 << ") .....  OK" << endl;
+		cout << "ENC(" << m2 << ") .....  ERROR" << endl;
 
 	if (p.dec(p.add(c1, c2)) == m1+m2)
 		cout << "ENC(" << m1 << " + " << m2 << ") .....  OK" << endl;
 	else
-		cout << "ENC(" << m1 << " + " << m2 << ") .....  OK" << endl;
+		cout << "ENC(" << m1 << " + " << m2 << ") .....  ERROR" << endl;
 
 	if (p.dec(p.add(c2, c1)) == m2+m1)
 		cout << "ENC(" << m2 << " + " << m1 << ") .....  OK" << endl;
 	else
-		cout << "ENC(" << m2 << " + " << m1 << ") .....  OK" << endl;
+		cout << "ENC(" << m2 << " + " << m1 << ") .....  ERROR" << endl;
 
 	if (p.dec(p.mul(c1, m2)) == m1*m2)
 		cout << "ENC(" << m1 << " * " << m2 << ") .....  OK" << endl;
 	else
-		cout << "ENC(" << m1 << " * " << m2 << ") .....  OK" << endl;
-
+		cout << "ENC(" << m1 << " * " << m2 << ") .....  ERROR" << endl;
 	if (p.dec(p.mul(c2, m1)) == m1*m2)
 		cout << "ENC(" << m2 << " * " << m1 << ") .....  OK" << endl;
 	else
-		cout << "ENC(" << m2 << " * " << m1 << ") .....  OK" << endl;
+		cout << "ENC(" << m2 << " * " << m1 << ") .....  ERROR" << endl;
 
-	if (p.dec(p.mul(c2, m2)) == m2*m2)
+	mpz_class val = p.dec(p.mul(c2, m2));
+	if (val == m2*m2)
 		cout << "ENC(" << m2 << " * " << m2 << ") .....  OK" << endl;
 	else
-		cout << "ENC(" << m2 << " * " << m2 << ") .....  ERROR" << endl;
+		cout << "ENC(" << m2 << " * " << m2 << ") .....  ERROR - " << val << endl;
+
+	val = p.dec(p.add(c1, p.mul(c2, m2)));
+	if (val == m1 + m2*m2)
+		cout << "ENC(" << m1 <<" + " << m2 << " * " << m2 << ") .....  OK" << endl;
+	else
+		cout << "ENC(" << m1 <<" + " << m2 << " * " << m2 << ") .....  ERROR" << endl;
+
 
 	vector<mpz_class> vec1(5, 2); // vector with five number two
 	vector<mpz_class> vec2(5, 3); // vector with five number two
 
-	vector<mpz_class> enc_vec1 = p.enc(vec1);
-	vector<mpz_class> enc_vec2 = p.enc(vec2);
+	vector<paillier::Ciphertext> enc_vec1 = p.enc(vec1);
+	vector<paillier::Ciphertext> enc_vec2 = p.enc(vec2);
 
 	
-	vector<mpz_class> sum_vec = p.add(enc_vec1, enc_vec2);
+	vector<paillier::Ciphertext> sum_vec = p.add(enc_vec1, enc_vec2);
 
 	if (p.dec(sum_vec) == vec1 + vec2)
 		cout << "ENC( vector1 + vector2 ) .....  OK" << endl;
@@ -87,15 +94,12 @@ int main(){
 		cout << "ENC( vector1 + vector2 ) .....  ERROR" << endl;
 
 
-	vector<mpz_class> prod_vec = p.mul(enc_vec1, vec2);
+	vector<paillier::Ciphertext> prod_vec = p.mul(enc_vec1, vec2);
 
 	if (p.dec(prod_vec) == mult_component_wise(vec1, vec2))
 		cout << "ENC( vector1 *. vector2 ) .....  OK" << endl;
 	else
 		cout << "ENC( vector1 *. vector2 ) .....  ERROR" << endl;
-
-
-
 
 	return 0;
 }
