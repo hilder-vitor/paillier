@@ -21,6 +21,7 @@ class Paillier {
 	void generate_primes(int number_of_bits);
 
 	void init_g_and_mu();
+	void init_g_and_mu_fast();
 		
 	/* Chinese Remainder Theorem: x is an element of Z_n^2 and n = p * q */
 	std::pair<mpz_class, mpz_class> crt(mpz_class x);

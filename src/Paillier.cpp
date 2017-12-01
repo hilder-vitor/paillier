@@ -40,8 +40,10 @@ void Paillier::generate_primes(int number_of_bits) {
 
 	lower_bound = p + 1; // new prime q will be greater than p
 
-	while(! valid){
+	while(!valid){
+		cout << "mpz_nextprime (prime, lower_bound.get_mpz_t());" << endl;
 		mpz_nextprime (prime, lower_bound.get_mpz_t());
+		cout << "q = mpz_class (prime);" << endl;
 		q = mpz_class (prime);
 		if (gcd (p*q, (p-1)*(q-1)) == mpz_class(1))
 			valid = true;
@@ -49,7 +51,6 @@ void Paillier::generate_primes(int number_of_bits) {
 			lower_bound = q + 1;
 	}
 	mpz_clear(prime);
-
 }
 
 void Paillier::init_g_and_mu(){
@@ -64,6 +65,14 @@ void Paillier::init_g_and_mu(){
 	g = crt(_g);
 }
 
+void Paillier::init_g_and_mu_fast(){
+	g = crt(n + mpz_class(1));
+	l = (p - 1)*(q - 1);
+	mpz_invert(mu.get_mpz_t(), l.get_mpz_t(), n.get_mpz_t());
+}
+
+
+
 Paillier::Paillier(int _number_of_bits_of_n) : rand_gen(gmp_randinit_default) {
 
 	rand_gen.seed(12345); // XXX: Just testing
@@ -72,6 +81,8 @@ Paillier::Paillier(int _number_of_bits_of_n) : rand_gen(gmp_randinit_default) {
 	int number_of_bits_of_primes = number_of_bits_of_n / 2; 
 
 	generate_primes(number_of_bits_of_primes);
+	cout << "p = " << p << endl;
+	cout << "q = " << q << endl;
 
 	p_square = p*p;
 	q_square = q*q;
@@ -82,7 +93,8 @@ Paillier::Paillier(int _number_of_bits_of_n) : rand_gen(gmp_randinit_default) {
 	n_square = n*n;
 	l = _lmc(p-1, q-1);
 
-	init_g_and_mu();
+/*	init_g_and_mu();*/
+	init_g_and_mu_fast();
 }
 
 Ciphertext Paillier::enc(mpz_class plaintext){
