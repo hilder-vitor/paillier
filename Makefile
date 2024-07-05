@@ -8,3 +8,6 @@ main: src/main.cpp src/Paillier.o
 
 src/Paillier.o: src/Paillier.h src/Paillier.cpp
 	$(CC) -c src/Paillier.cpp -o src/Paillier.o
+
+clean:
+	rm ./main

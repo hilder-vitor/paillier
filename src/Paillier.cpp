@@ -38,7 +38,8 @@ void Paillier::generate_primes(int number_of_bits) {
 	mpz_nextprime (prime, lower_bound.get_mpz_t());
 	p = mpz_class (prime);
 
-	lower_bound = p + 1; // new prime q will be greater than p
+    // new prime q will be greater than p
+	lower_bound = p + 1 + rand_gen.get_z_bits(number_of_bits/2);
 
 	while(!valid){
 		cout << "mpz_nextprime (prime, lower_bound.get_mpz_t());" << endl;
@@ -62,20 +63,21 @@ void Paillier::init_g_and_mu(){
 		mpz_powm (power_of_g.get_mpz_t(), _g.get_mpz_t(), l.get_mpz_t(), n_square.get_mpz_t());
 		found_inverse = mpz_invert(mu.get_mpz_t(), minus_one_over_n(power_of_g, n).get_mpz_t(), n.get_mpz_t());
 	}
-	g = crt(_g);
+	g = _g;
 }
 
 void Paillier::init_g_and_mu_fast(){
-	g = crt(n + mpz_class(1));
+	g = n + mpz_class(1); // g = (1 + n)
+    g_decomp = crt(n + mpz_class(1));
 	l = (p - 1)*(q - 1);
-	mpz_invert(mu.get_mpz_t(), l.get_mpz_t(), n.get_mpz_t());
+	mpz_invert(mu.get_mpz_t(), l.get_mpz_t(), n.get_mpz_t()); // mu = l^-1 mod n
 }
 
 
 
 Paillier::Paillier(int _number_of_bits_of_n) : rand_gen(gmp_randinit_default) {
 
-	rand_gen.seed(12345); // XXX: Just testing
+	rand_gen.seed(time(NULL)); // XXX: Just testing
 
 	number_of_bits_of_n = _number_of_bits_of_n;
 	int number_of_bits_of_primes = number_of_bits_of_n / 2; 
@@ -99,6 +101,18 @@ Paillier::Paillier(int _number_of_bits_of_n) : rand_gen(gmp_randinit_default) {
 
 Ciphertext Paillier::enc(mpz_class plaintext){
 
+	Ciphertext ctxt;
+	mpz_class r = mpz_class(1 + rand_gen.get_z_range(n-1)); // random r in [1, n - 1]
+	mpz_powm (r.get_mpz_t(), r.get_mpz_t(), n.get_mpz_t(), n_square.get_mpz_t());
+	mpz_class power_of_g = (mpz_class(1) + plaintext * n) % n_square;
+//	mpz_powm (power_of_g.get_mpz_t(), g.get_mpz_t(), plaintext.get_mpz_t(), n_square.get_mpz_t());
+	ctxt.c = (power_of_g * r) % n_square;
+
+    return ctxt;
+}
+	
+Ciphertext Paillier::enc_sk(mpz_class plaintext){
+
 	pair<mpz_class, mpz_class> plain = crt(plaintext);
 
 	Ciphertext c;
@@ -106,20 +120,26 @@ Ciphertext Paillier::enc(mpz_class plaintext){
 	mpz_class power_of_g;
 
 	mpz_powm (r.first.get_mpz_t(), r.first.get_mpz_t(), n.get_mpz_t(), p_square.get_mpz_t());
-	mpz_powm (power_of_g.get_mpz_t(), g.first.get_mpz_t(), plain.first.get_mpz_t(), p_square.get_mpz_t());
-	c.a = (power_of_g * r.first) % p_square;
+	mpz_powm (power_of_g.get_mpz_t(), g_decomp.first.get_mpz_t(), plain.first.get_mpz_t(), p_square.get_mpz_t());
+	c.c_p = (power_of_g * r.first) % p_square;
 
 	mpz_powm (r.second.get_mpz_t(), r.second.get_mpz_t(), n.get_mpz_t(), q_square.get_mpz_t());
-	mpz_powm (power_of_g.get_mpz_t(), g.second.get_mpz_t(), plain.second.get_mpz_t(), q_square.get_mpz_t());
-	c.b = (power_of_g * r.second) % q_square;
+	mpz_powm (power_of_g.get_mpz_t(), g_decomp.second.get_mpz_t(), plain.second.get_mpz_t(), q_square.get_mpz_t());
+	c.c_q = (power_of_g * r.second) % q_square;
+
+    c.c = inv_crt(c.c_p, c.c_q);
+    c.c_p = mpz_class(0);
+    c.c_q = mpz_class(0);
 
 	return c;
 }
-	
+
+
+
 mpz_class Paillier::dec(Ciphertext ciphertext){
 	mpz_class plain, a, b;
-	mpz_powm (a.get_mpz_t(), ciphertext.a.get_mpz_t(), l.get_mpz_t(), p_square.get_mpz_t());
-	mpz_powm (b.get_mpz_t(), ciphertext.b.get_mpz_t(), l.get_mpz_t(), q_square.get_mpz_t());
+	mpz_powm (a.get_mpz_t(), ciphertext.c.get_mpz_t(), l.get_mpz_t(), p_square.get_mpz_t());
+	mpz_powm (b.get_mpz_t(), ciphertext.c.get_mpz_t(), l.get_mpz_t(), q_square.get_mpz_t());
 
 	plain = inv_crt(a, b);
 
@@ -127,18 +147,17 @@ mpz_class Paillier::dec(Ciphertext ciphertext){
 }
 
 Ciphertext Paillier::add(Ciphertext c1, Ciphertext c2){
-	Ciphertext c;
-	c.a = (c1.a * c2.a) % p_square;
-	c.b = (c1.b * c2.b) % q_square;
-	return c;
+	Ciphertext ctxt;
+	ctxt.c = (c1.c * c2.c) % n_square;
+	return ctxt;
 }
 
 Ciphertext Paillier::mul(Ciphertext ciphertext, mpz_class plaintext){
-	Ciphertext c;
-	mpz_powm (c.a.get_mpz_t(), ciphertext.a.get_mpz_t(), plaintext.get_mpz_t(), p_square.get_mpz_t());
-	mpz_powm (c.b.get_mpz_t(), ciphertext.b.get_mpz_t(), plaintext.get_mpz_t(), q_square.get_mpz_t());
-	return c;
+	Ciphertext ctxt;
+	mpz_powm (ctxt.c.get_mpz_t(), ciphertext.c.get_mpz_t(), plaintext.get_mpz_t(), n_square.get_mpz_t());
+	return ctxt;
 }
+
 
 // --- Vector functions
 vector<Ciphertext> Paillier::enc(vector<mpz_class> plaintext){

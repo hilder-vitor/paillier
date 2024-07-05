@@ -31,92 +31,96 @@ vector<mpz_class> mult_component_wise(vector<mpz_class> u, vector<mpz_class> v){
 }
 
 int main(){
-	paillier::Paillier p(1024);
+	paillier::Paillier p(3070);
 
-	mpz_class m1 = 501;
-	mpz_class m2 = 112312313;
+    srand (time(NULL));
 
-	high_resolution_clock::time_point t1 = high_resolution_clock::now();
-	paillier::Ciphertext c1 = p.enc(m1);
-	high_resolution_clock::time_point t2 = high_resolution_clock::now();
-	auto duration = duration_cast<microseconds>( t2 - t1 ).count() * 0.001;
-	cout << "Encryption time for m1: " << duration << endl;
-	
-	t1 = high_resolution_clock::now();
-	paillier::Ciphertext c2 = p.enc(m2);
-	t2 = high_resolution_clock::now();
-	duration = duration_cast<microseconds>( t2 - t1 ).count() * 0.001;
-	cout << "Encryption time for m1: " << duration << endl;
+    double avg = 0.0;
+    int NTESTS = 100;
+    for(int i = 0; i <= NTESTS; i++){
+    	mpz_class m1 = rand() % 10000;
 
-	t1 = high_resolution_clock::now();
-	paillier::Ciphertext c_add_1 = p.add(c1,c2);
-	t2 = high_resolution_clock::now();
-	duration = duration_cast<microseconds>( t2 - t1 ).count() * 0.001;
-	cout << "Running time homomorphic m1 + m2: " << duration << endl;
+    	high_resolution_clock::time_point t1 = high_resolution_clock::now();
+	    paillier::Ciphertext c1 = p.enc(m1);
+    	high_resolution_clock::time_point t2 = high_resolution_clock::now();
+	    auto duration = duration_cast<milliseconds>( t2 - t1 ).count();
+        avg += duration;
 
-	t1 = high_resolution_clock::now();
-	paillier::Ciphertext c_add_2 = p.add(c2,c1);
-	t2 = high_resolution_clock::now();
-	duration = duration_cast<microseconds>( t2 - t1 ).count() * 0.001;
-	cout << "Running time homomorphic m2 + m1: " << duration << endl;
+    	if (p.dec(c1) != mpz_class(m1) % p.n){
+	    	cout << "Enc   .....  ERROR" << endl;
+            return 1;
+        }
 
-	t1 = high_resolution_clock::now();
-	paillier::Ciphertext c_prod_1 = p.mul(c1, m2);
-	t2 = high_resolution_clock::now();
-	duration = duration_cast<microseconds>( t2 - t1 ).count() * 0.001;
-	cout << "Running time homomorphic c1*m2: " << duration << endl;
+    }
+    cout << "Encryption time with pk: " << avg/NTESTS << " milliseconds" << endl;
 
-	t1 = high_resolution_clock::now();
-	paillier::Ciphertext c_prod_2 = p.mul(c2, m1);
-	t2 = high_resolution_clock::now();
-	duration = duration_cast<microseconds>( t2 - t1 ).count() * 0.001;
-	cout << "Running time homomorphic c21*m1: " << duration << endl;
+    avg = 0.0;
+    for(int i = 0; i <= NTESTS; i++){
+    	mpz_class m1 = rand() % 10000;
 
+    	high_resolution_clock::time_point t1 = high_resolution_clock::now();
+	    paillier::Ciphertext c1 = p.enc_sk(m1);
+    	high_resolution_clock::time_point t2 = high_resolution_clock::now();
+	    auto duration = duration_cast<milliseconds>( t2 - t1 ).count();
+        avg += duration;
 
+    	if (p.dec(c1) != mpz_class(m1) % p.n){
+	    	cout << "Enc   .....  ERROR" << endl;
+            return 1;
+        }
+
+    }
+    cout << "Encryption time with sk: " << avg/NTESTS << " milliseconds" << endl;
 
 
 
+	avg = 0.0;
+    for(int i = 0; i <= NTESTS; i++){
+    	mpz_class m1 = rand() % 10000;
+	    mpz_class m2 = rand() % 100000;
 
-	if (p.dec(c1) == m1)
-		cout << "ENC(" << m1 << ") .....  OK" << endl;
-	else
-		cout << "ENC(" << m1 << ") .....  ERROR" << endl;
+	    paillier::Ciphertext c1 = p.enc(m1);
+	    paillier::Ciphertext c2 = p.enc(m2);
 
-	if (p.dec(c2) == m2)
-		cout << "ENC(" << m2 << ") .....  OK" << endl;
-	else
-		cout << "ENC(" << m2 << ") .....  ERROR" << endl;
+    	high_resolution_clock::time_point t1 = high_resolution_clock::now();
+	    paillier::Ciphertext c_add = p.add(c1,c2);
+        high_resolution_clock::time_point t2 = high_resolution_clock::now();
 
-	if (p.dec(c_add_1) == m1+m2)
-		cout << "ENC(" << m1 << " + " << m2 << ") .....  OK" << endl;
-	else
-		cout << "ENC(" << m1 << " + " << m2 << ") .....  ERROR" << endl;
+	    auto duration = duration_cast<microseconds>( t2 - t1 ).count() * 0.001;
+        avg += duration;
+        
+    	if (p.dec(c_add) != mpz_class(m1+m2) % p.n){
+	    	cout << "Hom ADD   .....  ERROR" << endl;
+            return 1;
+        }
 
-	if (p.dec(c_add_2) == m2+m1)
-		cout << "ENC(" << m2 << " + " << m1 << ") .....  OK" << endl;
-	else
-		cout << "ENC(" << m2 << " + " << m1 << ") .....  ERROR" << endl;
+    }
+    avg /= NTESTS;
+    cout << "Running time homomorphic m1 + m2: " << avg << " milliseconds" << endl;
 
-	if (p.dec(c_prod_1) == m1*m2)
-		cout << "ENC(" << m1 << " * " << m2 << ") .....  OK" << endl;
-	else
-		cout << "ENC(" << m1 << " * " << m2 << ") .....  ERROR" << endl;
-	if (p.dec(c_prod_2) == m1*m2)
-		cout << "ENC(" << m2 << " * " << m1 << ") .....  OK" << endl;
-	else
-		cout << "ENC(" << m2 << " * " << m1 << ") .....  ERROR" << endl;
 
-	mpz_class val = p.dec(p.mul(c2, m2));
-	if (val == m2*m2)
-		cout << "ENC(" << m2 << " * " << m2 << ") .....  OK" << endl;
-	else
-		cout << "ENC(" << m2 << " * " << m2 << ") .....  ERROR - " << val << endl;
+	avg = 0.0;
+    for(int i = 0; i <= NTESTS; i++){
+    	mpz_class m1 = rand() % 10000;
+	    mpz_class m2 = rand() % 100000;
 
-	val = p.dec(p.add(c1, p.mul(c2, m2)));
-	if (val == m1 + m2*m2)
-		cout << "ENC(" << m1 <<" + " << m2 << " * " << m2 << ") .....  OK" << endl;
-	else
-		cout << "ENC(" << m1 <<" + " << m2 << " * " << m2 << ") .....  ERROR" << endl;
+	    paillier::Ciphertext c1 = p.enc(m1);
+
+    	high_resolution_clock::time_point t1 = high_resolution_clock::now();
+	    paillier::Ciphertext c_prod = p.mul(c1, m2);
+        high_resolution_clock::time_point t2 = high_resolution_clock::now();
+
+	    auto duration = duration_cast<microseconds>( t2 - t1 ).count() * 0.001;
+        avg += duration;
+
+    	if (p.dec(c_prod) != mpz_class(m1*m2) % p.n){
+	    	cout << "Hom Prod   .....  ERROR" << endl;
+            return 1;
+        }
+
+    }
+    avg /= NTESTS;
+	cout << "Running time homomorphic c1*m2: " << avg << " milliseconds" << endl;
 
 
 	vector<mpz_class> vec1(5, 2); // vector with five number two

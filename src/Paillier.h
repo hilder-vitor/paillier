@@ -14,9 +14,10 @@ class Paillier {
 
 	private:
 	gmp_randclass rand_gen;
-	mpz_class p, q, l, mu, n, p_square, q_square, n_square, inv_p_square, inv_q_square;
-	int number_of_bits_of_n;
-	std::pair<mpz_class, mpz_class> g; // value g used in encryption is represented in Z_p^2 x Z_q^2
+	mpz_class p, q, l, mu, p_square, q_square, inv_p_square, inv_q_square;
+    mpz_class g; // generator of group. Used for encryption. Set to 1 + n mod n^2
+
+  	std::pair<mpz_class, mpz_class> g_decomp; // value g used in encryption and decryption represented in Z_p^2 x Z_q^2
 
 	void generate_primes(int number_of_bits);
 
@@ -31,16 +32,24 @@ class Paillier {
 	
 	
 	public:
+
+	int number_of_bits_of_n;
+    mpz_class n, n_square;
+
 	Paillier(int number_of_bits_of_n);
 
 	Ciphertext enc(mpz_class plaintext);
+	
+    /* encrypt plaintext with the secret key instead of the public key,
+     * that is, explointing secret factorization of n into primes p and q */
+    Ciphertext enc_sk(mpz_class plaintext);
 	
 	mpz_class dec(Ciphertext ciphertext);
 
 	Ciphertext add(Ciphertext c1, Ciphertext c2);
 
 	Ciphertext mul(Ciphertext c, mpz_class plaintext);
-
+	
 
 	// --- Vector functions
 	std::vector<Ciphertext> enc(std::vector<mpz_class> plaintext);

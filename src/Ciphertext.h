@@ -8,15 +8,16 @@
 namespace paillier{
 
 /*   A Paillier ciphertext is an element of Z_n^2, where n = pq (product of primes p and q).
- *   To make operations more efficient, it is represented as an element of Z_p^2 x Z_q^2,
- * that is, a pair of elements (a, b) with a being an element of the integers mod p^2 and b
- * an element of the integers mod q^2.
- *   This is achieved by using the CRT (Chinese Remainder Theorem).
  */
 class Ciphertext {
 
 	public:
-	mpz_class a, b;
+    mpz_class c; // value in mod n^2
+           
+    // the two variables below represent c mod p and mod q. They are only used
+    // by functions that have access to the secret key, since these primes are secret
+	mpz_class c_p;
+	mpz_class c_q;
 
 };
 
